@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Treino" />
+  <meta name="theme-color" content="#f1f5f9" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Treino</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --line: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --green: #059669;
+      --gray: #64748b;
+      --amber: #fbbf24;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      padding:
+        calc(env(safe-area-inset-top) + 12px)
+        calc(env(safe-area-inset-right) + 12px)
+        calc(env(safe-area-inset-bottom) + 28px)
+        calc(env(safe-area-inset-left) + 12px);
+    }
+    button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    .hidden { display: none !important; }
+
+    /* Cabeçalho */
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
+    }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+    .title { display: flex; align-items: center; gap: 9px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 11px; background: var(--blue);
+      display: grid; place-items: center; font-size: 19px; flex-shrink: 0;
+    }
+    h1 { font-size: 19px; font-weight: 900; letter-spacing: -.02em; text-transform: uppercase; line-height: 1.1; }
+    .sub { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-sm { padding: 8px 11px; border-radius: 11px; font-size: 12px; font-weight: 800; border: 1px solid; }
+    .btn-undo { background: #fef3c7; color: #78350f; border-color: #fcd34d; }
+    .btn-reset { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+
+    /* Progresso */
+    .progress { background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+    .progress-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .progress-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #475569; }
+    .progress-count { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-top: 2px; }
+    .progress-pct { font-size: 30px; font-weight: 900; color: var(--blue); letter-spacing: -.02em; }
+    .bar { height: 12px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+    .bar-fill {
+      height: 100%; width: 0; border-radius: 99px;
+      background: linear-gradient(90deg, var(--blue), #10b981);
+      transition: width .3s ease;
+    }
+
+    /* Lista de dias */
+    .list { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .row {
+      background: #fff; border: 2px solid var(--line); border-radius: 18px;
+      padding: 10px; display: flex; gap: 10px; align-items: stretch;
+      animation: up .25s ease-out both;
+    }
+    .row.done { border-color: #6ee7b7; background: #f0fdf4; }
+    .row.today { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(251, 191, 36, .28); }
+    .day {
+      position: relative; width: 78px; flex-shrink: 0; border-radius: 13px; color: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 12px 4px 10px; text-align: center; transition: transform .12s;
+    }
+    .day:active { transform: scale(.95); }
+    .day.upper { background: var(--blue); }
+    .day.lower { background: var(--green); }
+    .day.rest { background: var(--gray); }
+    .day-short { font-size: 19px; font-weight: 900; line-height: 1; }
+    .day-badge { font-size: 10px; font-weight: 800; letter-spacing: .06em; margin-top: 4px; opacity: .95; }
+    .day-ok { margin-top: 5px; font-size: 10px; font-weight: 900; background: rgba(255, 255, 255, .25); padding: 1px 7px; border-radius: 99px; }
+    .tag-today {
+      position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+      background: var(--amber); color: #0f172a; font-size: 9px; font-weight: 900;
+      padding: 2px 8px; border-radius: 99px; letter-spacing: .06em;
+    }
+    .pills { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .pill {
+      display: flex; align-items: center; gap: 7px; padding: 10px 13px; border-radius: 12px;
+      border: 2px solid var(--text); background: #fff; font-size: 13px; font-weight: 900;
+      text-transform: uppercase; letter-spacing: -.01em;
+      transition: transform .12s, background-color .18s, border-color .18s;
+    }
+    .pill:active { transform: scale(.95); }
+    .pill .num { color: var(--blue); }
+    .pill.done { border-color: var(--green); background: #ecfdf5; color: #064e3b; }
+    .pill.done .lbl { text-decoration: line-through; opacity: .8; }
+    .check {
+      width: 17px; height: 17px; border-radius: 50%; background: var(--green); color: #fff;
+      font-size: 10px; display: grid; place-items: center; flex-shrink: 0;
+    }
+    .pill.rest { border-color: #cbd5e1; background: #f8fafc; color: #475569; }
+    .pill.rest.done { border-color: var(--green); background: #ecfdf5; color: #064e3b; }
+
+    .hint { text-align: center; font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 16px; line-height: 1.6; }
+
+    /* Janelas */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, .5); z-index: 50;
+      display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 18px; padding: 18px; width: 100%; max-width: 400px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, .2); animation: up .22s ease-out;
+    }
+    .modal h3 { font-size: 16px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
+    .modal p { font-size: 14px; color: #475569; line-height: 1.45; margin-bottom: 16px; }
+    .modal p strong { color: var(--text); }
+    .modal-actions { display: flex; flex-direction: column; gap: 8px; }
+    .btn { padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 800; text-align: center; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-secondary { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .btn-ghost { background: #f1f5f9; color: #334155; }
+    .btn-danger { background: #e11d48; color: #fff; }
+
+    /* Aviso flutuante */
+    .toast {
+      position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));
+      transform: translate(-50%, 10px); opacity: 0; transition: all .3s;
+      background: #0f172a; color: #fff; font-size: 13px; font-weight: 800;
+      padding: 10px 16px; border-radius: 99px; white-space: nowrap; pointer-events: none; z-index: 60;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <header class="card">
+      <div class="top">
+        <div class="title">
+          <div class="logo">💪</div>
+          <div>
+            <h1>Treino Semanal</h1>
+            <p class="sub" id="todayText">Hoje</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="undoBtn" class="btn-sm btn-undo hidden" onclick="undoLastAdaptation()">↩️ Desfazer</button>
+          <button class="btn-sm btn-reset" onclick="openModal('resetModal')">Reiniciar</button>
+        </div>
+      </div>
+
+      <div class="progress">
+        <div class="progress-head">
+          <div>
+            <span class="progress-label">Progresso da semana</span>
+            <span class="progress-count" id="countText">0/7 dias concluídos</span>
+          </div>
+          <span class="progress-pct" id="pctText">0%</span>
+        </div>
+        <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+      </div>
+    </header>
+
+    <main class="list" id="list"></main>
+
+    <p class="hint">
+      Toque num grupo para marcar • Toque no dia para marcar tudo<br />
+      Treino de outro dia pode ser feito hoje e a semana se adapta
+    </p>
+  </div>
+
+  <!-- Janela: treino fora da ordem -->
+  <div class="overlay" id="adaptModal" onclick="if (event.target === this) closeAdapt()">
+    <div class="modal">
+      <h3 id="adaptTitle">Fazer este treino hoje?</h3>
+      <p id="adaptDesc"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="adaptPrimary" onclick="confirmAdapt()">Fazer hoje e adaptar</button>
+        <button class="btn btn-secondary" id="adaptSecondary" onclick="markOnly()">Só marcar como feito</button>
+        <button class="btn btn-ghost" onclick="closeAdapt()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Janela: reiniciar semana -->
+  <div class="overlay" id="resetModal" onclick="if (event.target === this) closeModal('resetModal')">
+    <div class="modal">
+      <h3>Reiniciar semana?</h3>
+      <p>Isso desmarca todos os treinos e volta a programação original da semana.</p>
+      <div class="modal-actions">
+        <button class="btn btn-danger" onclick="confirmReset()">Sim, reiniciar</button>
+        <button class="btn btn-ghost" onclick="closeModal('resetModal')">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'treino_offline_v1';
+    const JS_DAY_TO_ID = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'];
+
+    // ===== Regras de recuperação muscular (evita mesmo músculo/sinergista em dias seguidos) =====
+    const MUSCLE_RELATIONS = {
+      biceps: { primary: ['biceps'], synergists: ['costas', 'antebraco'] },
+      triceps: { primary: ['triceps'], synergists: ['peito', 'ombro'] },
+      antebraco: { primary: ['antebraco'], synergists: ['biceps', 'costas'] },
+      perna: { primary: ['perna'], synergists: ['panturrilha'] },
+      panturrilha: { primary: ['panturrilha'], synergists: ['perna'] },
+      ombro: { primary: ['ombro'], synergists: ['peito', 'triceps'] },
+      costas: { primary: ['costas'], synergists: ['biceps', 'antebraco'] },
+      peito: { primary: ['peito'], synergists: ['triceps', 'ombro'] },
+    };
+
+    function normalizeMuscleKey(label) {
+      const clean = label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+      if (clean.includes('bicep')) return 'biceps';
+      if (clean.includes('tricep')) return 'triceps';
+      if (clean.includes('antebrac')) return 'antebraco';
+      if (clean.includes('perna') || clean.includes('quadriceps') || clean.includes('posterior')) return 'perna';
+      if (clean.includes('panturrilha')) return 'panturrilha';
+      if (clean.includes('ombro') || clean.includes('deltoid')) return 'ombro';
+      if (clean.includes('costa') || clean.includes('dorsal')) return 'costas';
+      if (clean.includes('peito') || clean.includes('peitoral')) return 'peito';
+      return clean;
+    }
+
+    function getSessionMuscleProfile(session) {
+      const primaries = new Set();
+      const synergists = new Set();
+      if (!session || session.category === 'rest' || !session.tasks) return { primaries, synergists };
+      session.tasks.forEach(task => {
+        const key = normalizeMuscleKey(task.label);
+        primaries.add(key);
+        const rel = MUSCLE_RELATIONS[key];
+        if (rel) {
+          rel.primary.forEach(p => primaries.add(p));
+          rel.synergists.forEach(s => synergists.add(s));
+        }
+      });
+      return { primaries, synergists };
+    }
+
+    function conflictScore(prevSession, nextSession) {
+      if (!prevSession || !nextSession) return 0;
+      if (prevSession.category === 'rest' || nextSession.category === 'rest') return 0;
+      const prev = getSessionMuscleProfile(prevSession);
+      const next = getSessionMuscleProfile(nextSession);
+      let score = 0;
+      prev.primaries.forEach(m => { if (next.primaries.has(m)) score += 100; });
+      prev.primaries.forEach(m => { if (next.synergists.has(m)) score += 35; });
+      prev.synergists.forEach(m => { if (next.primaries.has(m)) score += 35; });
+      if (prevSession.category === 'lower' && nextSession.category === 'lower') score += 120;
+      return score;
+    }
+
+    function getPermutations(arr) {
+      if (arr.length <= 1) return [arr];
+      const result = [];
+      for (let i = 0; i < arr.length; i++) {
+        const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+        for (const perm of getPermutations(rest)) result.push([arr[i], ...perm]);
+      }
+      return result;
+    }
+
+    // ===== Programação padrão da semana =====
+    function getDefaultDays() {
+      return [
+        { id: 'seg', short: 'SEG', full: 'Segunda-feira', session: { id: 'sess-seg', category: 'upper', badge: 'BRAÇOS', tasks: [
+          { id: 'seg-1', label: 'BÍCEPS', done: false },
+          { id: 'seg-2', label: 'TRÍCEPS', done: false },
+          { id: 'seg-3', label: 'ANTEBRAÇO', done: false },
+        ] } },
+        { id: 'ter', short: 'TER', full: 'Terça-feira', session: { id: 'sess-ter', category: 'lower', badge: 'PERNA', tasks: [
+          { id: 'ter-1', label: 'PERNA', done: false },
+          { id: 'ter-2', label: 'PANTURRILHA', done: false },
+        ] } },
+        { id: 'qua', short: 'QUA', full: 'Quarta-feira', session: { id: 'sess-qua', category: 'rest', badge: 'OFF', tasks: [
+          { id: 'qua-rest', label: 'DESCANSO', done: false, isRest: true },
+        ] } },
+        { id: 'qui', short: 'QUI', full: 'Quinta-feira', session: { id: 'sess-qui', category: 'upper', badge: 'TRONCO', tasks: [
+          { id: 'qui-1', label: 'BÍCEPS', done: false },
+          { id: 'qui-2', label: 'OMBRO', done: false },
+        ] } },
+        { id: 'sex', short: 'SEX', full: 'Sexta-feira', session: { id: 'sess-sex', category: 'upper', badge: 'TRONCO', tasks: [
+          { id: 'sex-1', label: 'COSTAS', done: false },
+        ] } },
+        { id: 'sab', short: 'SÁB', full: 'Sábado', session: { id: 'sess-sab', category: 'upper', badge: 'TRONCO', tasks: [
+          { id: 'sab-1', label: 'PEITO', done: false },
+          { id: 'sab-2', label: 'TRÍCEPS', done: false },
+        ] } },
+        { id: 'dom', short: 'DOM', full: 'Domingo', session: { id: 'sess-dom', category: 'lower', badge: 'PERNA', tasks: [
+          { id: 'dom-1', label: 'PERNA', done: false },
+        ] } },
+      ];
+    }
+
+    // ===== Estado (salvo só neste aparelho) =====
+    let state = { days: getDefaultDays(), previousSnapshot: null };
+    let todayId = JS_DAY_TO_ID[new Date().getDay()];
+    let pending = null;
+
+    const clone = obj => JSON.parse(JSON.stringify(obj));
+    const findDay = id => state.days.find(d => d.id === id);
+    const $ = id => document.getElementById(id);
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.days) && parsed.days.length === 7) {
+          state = { days: parsed.days, previousSnapshot: parsed.previousSnapshot || null };
+        }
+      } catch (err) { /* começa do zero */ }
+    }
+
+    function save() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (err) { /* sem espaço */ }
+    }
+
+    let toastTimer = null;
+    function toast(text) {
+      const el = $('toast');
+      el.textContent = text;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+    }
+
+    function openModal(id) { $(id).classList.add('open'); }
+    function closeModal(id) { $(id).classList.remove('open'); }
+
+    // ===== Marcação =====
+    function onTaskClick(dayId, taskId) {
+      const day = findDay(dayId);
+      const task = day && day.session.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      if (dayId === todayId || task.done) {
+        task.done = !task.done;
+        save();
+        render();
+        if (task.done) toast(`💪 ${task.label} concluído!`);
+        return;
+      }
+      openAdapt(dayId, taskId);
+    }
+
+    function onDayClick(dayId) {
+      const day = findDay(dayId);
+      if (!day) return;
+      const allDone = day.session.tasks.every(t => t.done);
+      if (dayId === todayId || allDone) {
+        day.session.tasks.forEach(t => { t.done = !allDone; });
+        save();
+        render();
+        if (!allDone) toast(`🔥 ${day.short} concluído!`);
+        return;
+      }
+      openAdapt(dayId, null);
+    }
+
+    // ===== Adaptação (treino de outro dia feito hoje) =====
+    function openAdapt(dayId, taskId) {
+      const src = findDay(dayId);
+      const today = findDay(todayId);
+      if (!src || !today) return;
+      pending = { dayId, taskId };
+
+      const isRest = src.session.category === 'rest';
+      const muscles = src.session.tasks.map(t => t.label).join(', ');
+      $('adaptTitle').textContent = isRest ? 'Descansar hoje?' : 'Fazer este treino hoje?';
+      $('adaptDesc').innerHTML = isRest
+        ? `Trazer o descanso de <strong>${src.short}</strong> para hoje (${today.short}) e reorganizar o resto da semana?`
+        : `Fazer <strong>${muscles}</strong> (${src.short}) hoje (${today.short}) e reorganizar o resto da semana?`;
+      $('adaptPrimary').textContent = isRest ? 'Descansar hoje e adaptar' : 'Fazer hoje e adaptar';
+      $('adaptSecondary').textContent = `Só marcar como feito em ${src.short}`;
+      openModal('adaptModal');
+    }
+
+    function closeAdapt() {
+      pending = null;
+      closeModal('adaptModal');
+    }
+
+    // Marca no próprio dia, sem mexer na semana (ex.: esqueceu de marcar ontem)
+    function markOnly() {
+      if (!pending) return;
+      const day = findDay(pending.dayId);
+      if (day) {
+        day.session.tasks.forEach(t => {
+          if (!pending.taskId || t.id === pending.taskId) t.done = true;
+        });
+        toast(`✅ ${day.short} marcado!`);
+      }
+      closeAdapt();
+      save();
+      render();
+    }
+
+    function isStarted(session) {
+      return session && session.tasks && session.tasks.some(t => t.done);
+    }
+
+    function confirmAdapt() {
+      if (!pending) return;
+      const days = state.days;
+      const todayIndex = days.findIndex(d => d.id === todayId);
+      const sourceIndex = days.findIndex(d => d.id === pending.dayId);
+      if (todayIndex === -1 || sourceIndex === -1 || todayIndex === sourceIndex) { closeAdapt(); return; }
+
+      state.previousSnapshot = clone(days);
+
+      const selected = clone(days[sourceIndex].session);
+      const displaced = clone(days[todayIndex].session);
+
+      selected.tasks.forEach(t => {
+        if (!pending.taskId || t.id === pending.taskId) t.done = true;
+      });
+
+      // Troca: o treino escolhido vem para hoje e o de hoje vai para o dia de origem
+      days[todayIndex].session = selected;
+      days[sourceIndex].session = displaced;
+
+      // Dias ainda não iniciados entram na reorganização
+      const flexible = [];
+      const pool = [];
+      for (let i = 0; i < 7; i++) {
+        if (i === todayIndex) continue;
+        if (!isStarted(days[i].session)) {
+          flexible.push(i);
+          pool.push(days[i].session);
+        }
+      }
+
+      if (flexible.length > 1) {
+        let best = pool;
+        let lowest = Infinity;
+        for (const perm of getPermutations(pool)) {
+          const week = days.map(d => d.session);
+          flexible.forEach((dayIdx, k) => { week[dayIdx] = perm[k]; });
+          let penalty = 0;
+          for (let d = 0; d < 7; d++) penalty += conflictScore(week[d], week[(d + 1) % 7]);
+          // O descanso nunca é sugerido para o dia seguinte: só entra ali se você escolher
+          if (week[(todayIndex + 1) % 7].category === 'rest') penalty += 1000;
+          // Em empate, prefere mexer o mínimo possível
+          flexible.forEach((dayIdx, k) => { if (perm[k] !== days[dayIdx].session) penalty += 1; });
+          if (penalty < lowest) { lowest = penalty; best = perm; }
+        }
+        flexible.forEach((dayIdx, k) => { days[dayIdx].session = best[k]; });
+      }
+
+      closeAdapt();
+      save();
+      render();
+      toast('⚡ Seu treino foi adaptado para a semana!');
+    }
+
+    function undoLastAdaptation() {
+      if (!state.previousSnapshot) return;
+      state.days = clone(state.previousSnapshot);
+      state.previousSnapshot = null;
+      save();
+      render();
+      toast('↩️ Adaptação desfeita');
+    }
+
+    function confirmReset() {
+      state = { days: getDefaultDays(), previousSnapshot: null };
+      closeModal('resetModal');
+      save();
+      render();
+      toast('🔄 Semana reiniciada!');
+    }
+
+    // ===== Tela =====
+    function render() {
+      const today = findDay(todayId);
+      $('todayText').textContent = today ? `Hoje: ${today.full}` : '';
+      $('undoBtn').classList.toggle('hidden', !state.previousSnapshot);
+
+      // Progresso por dia: um dia conta quando todos os seus grupos estão marcados
+      const total = state.days.length;
+      const done = state.days.filter(d => d.session.tasks.length > 0 && d.session.tasks.every(t => t.done)).length;
+      const pct = total ? Math.round((done / total) * 100) : 0;
+      $('countText').textContent = `${done}/${total} dias concluídos`;
+      $('pctText').textContent = `${pct}%`;
+      $('barFill').style.width = `${pct}%`;
+
+      const list = $('list');
+      list.innerHTML = '';
+      state.days.forEach((day, index) => {
+        const isToday = day.id === todayId;
+        const allDone = day.session.tasks.length > 0 && day.session.tasks.every(t => t.done);
+        const cat = day.session.category;
+
+        const row = document.createElement('div');
+        row.className = 'row' + (allDone ? ' done' : '') + (isToday ? ' today' : '');
+        row.style.animationDelay = `${index * 25}ms`;
+
+        const block = document.createElement('button');
+        block.type = 'button';
+        block.className = `day ${cat}`;
+        block.onclick = () => onDayClick(day.id);
+        block.innerHTML =
+          (isToday ? '<span class="tag-today">HOJE</span>' : '') +
+          `<span class="day-short">${day.short}</span>` +
+          `<span class="day-badge">${day.session.badge}</span>` +
+          (allDone ? '<span class="day-ok">✓ OK</span>' : '');
+
+        const pills = document.createElement('div');
+        pills.className = 'pills';
+        day.session.tasks.forEach((task, i) => {
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          const isRest = cat === 'rest' || task.isRest;
+          pill.className = 'pill' + (isRest ? ' rest' : '') + (task.done ? ' done' : '');
+          pill.onclick = () => onTaskClick(day.id, task.id);
+
+          const icon = document.createElement('span');
+          if (task.done) { icon.className = 'check'; icon.textContent = '✓'; }
+          else if (isRest) { icon.textContent = '🧘'; }
+          else { icon.className = 'num'; icon.textContent = i + 1; }
+
+          const label = document.createElement('span');
+          label.className = 'lbl';
+          label.textContent = task.label;
+
+          pill.append(icon, label);
+          pills.appendChild(pill);
+        });
+
+        row.append(block, pills);
+        list.appendChild(row);
+      });
+    }
+
+    // Atualiza "Hoje" quando o app volta do segundo plano em outro dia
+    function refreshToday() {
+      const real = JS_DAY_TO_ID[new Date().getDay()];
+      if (real !== todayId) { todayId = real; render(); }
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') refreshToday();
+    });
+    window.addEventListener('focus', refreshToday);
+
+    load();
+    render();
+
+    // Funcionamento offline
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(() => {});
+    }
+  </script>
+</body>
+</html>
